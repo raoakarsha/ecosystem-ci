@@ -1,0 +1,48 @@
+target_repository:
+  HTTPS: <Habana repo>
+  # checkout a particular branch or a tag
+  checkout: master
+  # copy some  test from the target repository
+  copy_tests:
+    - .actions/
+    - examples/pl_hpu
+    - tests/tests_pytorch
+
+contact:
+  slack:
+    # add contact to recieve notifications
+    - <add contacts>
+
+env:
+  # let's limit the installation only to Pytorch-Lightning
+  PACKAGE_NAME: pytorch
+  FREEZE_REQUIREMENTS: "1"
+  PYTHONPATH: "${PYTHONPATH}:$(pwd)"
+
+dependencies:
+  - name: pytorch-lightning
+    HTTPS: https://github.com/Lightning-AI/lightning.git
+    # we can provide the required branch
+    checkout: release/stable
+
+testing:
+  # single card testing
+  dirs:
+    - tests/tests_pytorch/accelerators/
+  # additional pytest arguments
+  pytest_args: -sv test_hpu.py --forked --junitxml=hpu1_test-results.xml
+  
+  # need to check if we are having multiple files
+  dirs:
+    - tests/tests_pytorch/accelerators/
+  pytest_args: -sv accelerators/test_hpu.py --forked --hpus 8 --junitxml=hpu8_test-results.xml
+  
+  dirs:
+    - tests/tests_pytorch/accelerators 
+   pytest_args: -sv plugins/precision/hpu/test_hpu.py --hmp-bf16 \
+          'plugins/precision/hpu/ops_bf16.txt' --hmp-fp32 \
+          'plugins/precision/hpu/ops_fp32.txt' --forked \
+   
+   dirs:
+    - examples/pl_hpu/ 
+   pytest_args: "mnist_sample.py"
